@@ -111,77 +111,6 @@ def analyze_image(image: Image.Image) -> Tuple[Optional[Dict], str]:
         return None, f"❌ Error analyzing image: {str(e)}"
 
 
-def get_history() -> str:
-    """Get recent prediction history."""
-    if db_handler is None or not db_handler.is_connected:
-        return "⚠️ Database not connected. History unavailable."
-    
-    try:
-        recent = db_handler.get_recent_predictions(10)
-        if not recent:
-            return "📭 No analysis history yet."
-        
-        history_md = "## 📜 Recent Analysis History\n\n"
-        history_md += "| # | File | Result | Confidence | Time |\n"
-        history_md += "|---|------|--------|------------|------|\n"
-        
-        for i, item in enumerate(recent, 1):
-            pred = item.get('prediction', 'Unknown')
-            conf = item.get('confidence', 0) * 100
-            filename = item.get('filename', 'Unknown')[:20]
-            timestamp = item.get('timestamp', '')[:19]
-            emoji = "🟢" if pred == "Benign" else "🔴"
-            history_md += f"| {i} | {filename} | {emoji} {pred} | {conf:.1f}% | {timestamp} |\n"
-        
-        return history_md
-        
-    except Exception as e:
-        return f"❌ Error loading history: {str(e)}"
-
-
-def get_prediction_detail(prediction_id: str) -> str:
-    """Get detailed view of a specific prediction."""
-    if not prediction_id:
-        return "Enter a prediction ID to view details."
-    
-    if db_handler is None or not db_handler.is_connected:
-        return "⚠️ Database not connected."
-    
-    try:
-        doc = db_handler.get_prediction(prediction_id.strip())
-        if not doc:
-            return f"❌ Prediction not found: `{prediction_id}`"
-        
-        pred = doc.get('prediction', 'Unknown')
-        conf = doc.get('confidence', 0) * 100
-        emoji = "🟢" if pred == "Benign" else "🔴"
-        
-        detail = f"""
-## 📋 Prediction Details
-
-**ID:** `{doc.get('_id')}`
-
-**File:** {doc.get('filename', 'Unknown')}
-
-**Result:** {emoji} **{pred}** ({conf:.1f}% confidence)
-
-| Metric | Value |
-|--------|-------|
-| Benign Probability | {doc.get('benign_probability', 0) * 100:.1f}% |
-| Malignant Probability | {doc.get('malignant_probability', 0) * 100:.1f}% |
-
-**Timestamp:** {doc.get('timestamp', 'Unknown')}
-"""
-        
-        if doc.get('image_url'):
-            detail += f"\n**Image URL:** [{doc.get('image_url')}]({doc.get('image_url')})"
-        
-        return detail
-        
-    except Exception as e:
-        return f"❌ Error: {str(e)}"
-
-
 # Build Gradio Interface
 def create_gradio_app() -> gr.Blocks:
     """Create and return the Gradio application."""
@@ -196,57 +125,31 @@ def create_gradio_app() -> gr.Blocks:
         **[📜 View History & Details](/history)** | **[API Documentation](/api/docs)** | **Model:** EfficientNet-B0 with Coordinate Attention
         """)
         
-        with gr.Tabs():
-            # Tab 1: Analysis
-            with gr.Tab("🔍 Analyze"):
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        input_image = gr.Image(
-                            type="pil",
-                            label="Upload Histopathology Image",
-                            height=350
-                        )
-                        analyze_btn = gr.Button(
-                            "🔍 Analyze Image",
-                            variant="primary",
-                            size="lg"
-                        )
-                    
-                    with gr.Column(scale=1):
-                        output_label = gr.Label(
-                            label="Classification",
-                            num_top_classes=2
-                        )
-                        output_report = gr.Markdown(label="Analysis Report")
-                
-                analyze_btn.click(
-                    fn=analyze_image,
-                    inputs=[input_image],
-                    outputs=[output_label, output_report]
+        with gr.Row():
+            with gr.Column(scale=1):
+                input_image = gr.Image(
+                    type="pil",
+                    label="Upload Histopathology Image",
+                    height=350
+                )
+                analyze_btn = gr.Button(
+                    "🔍 Analyze Image",
+                    variant="primary",
+                    size="lg"
                 )
             
-            # Tab 2: History
-            with gr.Tab("📜 History"):
-                history_output = gr.Markdown()
-                refresh_btn = gr.Button("🔄 Refresh History", variant="secondary")
-                refresh_btn.click(fn=get_history, outputs=[history_output])
-                
-                gr.Markdown("---")
-                
-                gr.Markdown("### 🔎 Look Up Prediction")
-                with gr.Row():
-                    prediction_id_input = gr.Textbox(
-                        label="Prediction ID",
-                        placeholder="Enter prediction ID (e.g., 507f1f77bcf86cd799439011)"
-                    )
-                    lookup_btn = gr.Button("🔍 Look Up", variant="secondary")
-                
-                detail_output = gr.Markdown()
-                lookup_btn.click(
-                    fn=get_prediction_detail,
-                    inputs=[prediction_id_input],
-                    outputs=[detail_output]
+            with gr.Column(scale=1):
+                output_label = gr.Label(
+                    label="Classification",
+                    num_top_classes=2
                 )
+                output_report = gr.Markdown(label="Analysis Report")
+        
+        analyze_btn.click(
+            fn=analyze_image,
+            inputs=[input_image],
+            outputs=[output_label, output_report]
+        )
         
         gr.Markdown("""
         ---
