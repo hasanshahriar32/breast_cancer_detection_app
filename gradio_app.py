@@ -193,7 +193,7 @@ def create_gradio_app() -> gr.Blocks:
         
         Upload histopathology images to detect **benign** or **malignant** tissue using Deep Learning.
         
-        **API Documentation:** [/api/docs](/api/docs) | **Model:** EfficientNet-B0 with Coordinate Attention
+        **[📜 View History & Details](/history)** | **[API Documentation](/api/docs)** | **Model:** EfficientNet-B0 with Coordinate Attention
         """)
         
         with gr.Tabs():

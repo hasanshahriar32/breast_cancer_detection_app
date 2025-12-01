@@ -20,6 +20,7 @@ load_dotenv()
 # Import handlers
 from core import ModelHandler, DatabaseHandler, StorageHandler
 import gradio_app
+import gradio_history
 
 # Configuration
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "best_histopathology_model.pth")
@@ -35,6 +36,11 @@ storage_handler = StorageHandler()
 gradio_app.model_handler = model_handler
 gradio_app.db_handler = db_handler
 gradio_app.storage_handler = storage_handler
+
+# Share handlers with gradio_history
+gradio_history.model_handler = model_handler
+gradio_history.db_handler = db_handler
+gradio_history.storage_handler = storage_handler
 
 
 # ============================================================================
@@ -243,10 +249,13 @@ async def delete_prediction(prediction_id: str):
 
 
 # ============================================================================
-# Mount Gradio App
+# Mount Gradio Apps
 # ============================================================================
 
-# Mount Gradio at root path
+# Mount History/Detail Gradio at /history path
+app = gr.mount_gradio_app(app, gradio_history.history_gradio_app, path="/history")
+
+# Mount Main Gradio at root path
 app = gr.mount_gradio_app(app, gradio_app.gradio_app, path="/")
 
 
@@ -261,7 +270,8 @@ if __name__ == "__main__":
     print("🔬 Breast Cancer Histopathology Analysis")
     print("=" * 60)
     print(f"📍 Server: http://localhost:{port}")
-    print(f"🖥️  UI: http://localhost:{port}")
+    print(f"🖥️  Main UI: http://localhost:{port}")
+    print(f"📜 History: http://localhost:{port}/history")
     print(f"📡 API Docs: http://localhost:{port}/api/docs")
     print(f"📖 ReDoc: http://localhost:{port}/api/redoc")
     print("=" * 60 + "\n")
