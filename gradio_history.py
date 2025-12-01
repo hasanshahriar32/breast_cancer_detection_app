@@ -366,10 +366,7 @@ def get_prediction_detail(prediction_id: str) -> tuple:
 def create_history_gradio_app() -> gr.Blocks:
     """Create the History & Detail Gradio application."""
     
-    with gr.Blocks(
-        title="Analysis History & Details",
-        theme=gr.themes.Soft()
-    ) as app:
+    with gr.Blocks(title="Analysis History & Details") as app:
         
         gr.Markdown("""
 # 📜 Analysis History & Details
