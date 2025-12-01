@@ -376,9 +376,9 @@ View past analyses and get detailed reports for any prediction.
 [← Back to Main Analysis](/) | [API Documentation](/api/docs)
         """)
         
-        with gr.Tabs():
+        with gr.Tabs() as tabs:
             # Tab 1: History Overview
-            with gr.Tab("📊 History Overview"):
+            with gr.Tab("📊 History Overview", id="history_tab"):
                 gr.Markdown("### View All Past Analyses")
                 
                 history_output = gr.Markdown(value="Click 'Load History' to view past analyses.")
@@ -388,11 +388,11 @@ View past analyses and get detailed reports for any prediction.
                 
                 refresh_btn.click(fn=format_history_table, outputs=[history_output])
                 
-                # Auto-load on page visit
+                # Auto-load history table on page visit (independent of query params)
                 app.load(fn=format_history_table, outputs=[history_output])
             
             # Tab 2: Detailed View
-            with gr.Tab("🔍 Detailed Analysis"):
+            with gr.Tab("🔍 Detailed Analysis", id="detail_tab"):
                 gr.Markdown("""
 ### Look Up Prediction by ID
 
@@ -432,6 +432,34 @@ Enter a prediction ID to view the complete detailed analysis report.
                     inputs=[prediction_id_input],
                     outputs=[detail_output, prob_output, image_output]
                 )
+        
+        # Handle query parameters (e.g. ?id=...)
+        def on_load(request: gr.Request):
+            params = request.query_params
+            pid = params.get('id')
+            if pid:
+                # If ID is present, switch to detail tab and load details
+                details, prob, img = get_prediction_detail(pid)
+                return (
+                    gr.Tabs(selected="detail_tab"), 
+                    pid, 
+                    details, 
+                    prob, 
+                    img
+                )
+            return (
+                gr.Tabs(selected="history_tab"), 
+                "", 
+                "", 
+                None, 
+                None
+            )
+
+        app.load(
+            fn=on_load, 
+            inputs=None, 
+            outputs=[tabs, prediction_id_input, detail_output, prob_output, image_output]
+        )
         
         gr.Markdown("""
 ---

@@ -9,7 +9,7 @@ import gradio as gr
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
@@ -246,6 +246,12 @@ async def delete_prediction(prediction_id: str):
         raise HTTPException(status_code=404, detail=f"Prediction not found: {prediction_id}")
     
     return {"message": f"Prediction {prediction_id} deleted successfully"}
+
+
+@app.get("/{prediction_id:regex(^[0-9a-fA-F]{24}$)}", include_in_schema=False)
+async def redirect_to_detail(prediction_id: str):
+    """Redirect valid IDs to the history detail view."""
+    return RedirectResponse(url=f"/history?id={prediction_id}")
 
 
 # ============================================================================
