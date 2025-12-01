@@ -10,7 +10,20 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, RedirectResponse
+from starlette.convertors import Convertor, register_convertor
 from pydantic import BaseModel
+
+# Register custom path convertor for MongoDB ObjectIDs
+class ObjectIDConvertor(Convertor):
+    regex = "[0-9a-fA-F]{24}"
+
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        return value
+
+register_convertor("objectid", ObjectIDConvertor)
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
@@ -248,13 +261,13 @@ async def delete_prediction(prediction_id: str):
     return {"message": f"Prediction {prediction_id} deleted successfully"}
 
 
-@app.get("/{prediction_id:regex(^[0-9a-fA-F]{24}$)}", include_in_schema=False)
+@app.get("/{prediction_id:objectid}", include_in_schema=False)
 async def redirect_to_detail(prediction_id: str):
     """Redirect valid IDs to the history detail view."""
     return RedirectResponse(url=f"/history?id={prediction_id}")
 
 
-@app.get("/history/{prediction_id:regex(^[0-9a-fA-F]{24}$)}", include_in_schema=False)
+@app.get("/history/{prediction_id:objectid}", include_in_schema=False)
 async def redirect_history_subpath(prediction_id: str):
     """Redirect /history/ID to /history?id=ID."""
     return RedirectResponse(url=f"/history?id={prediction_id}")
