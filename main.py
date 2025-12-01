@@ -254,6 +254,12 @@ async def redirect_to_detail(prediction_id: str):
     return RedirectResponse(url=f"/history?id={prediction_id}")
 
 
+@app.get("/history/{prediction_id:regex(^[0-9a-fA-F]{24}$)}", include_in_schema=False)
+async def redirect_history_subpath(prediction_id: str):
+    """Redirect /history/ID to /history?id=ID."""
+    return RedirectResponse(url=f"/history?id={prediction_id}")
+
+
 # ============================================================================
 # Mount Gradio Apps
 # ============================================================================
